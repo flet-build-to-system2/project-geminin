@@ -85,6 +85,26 @@ async def finish_game(query, board, winner):
         msg += " (+10 pts!)"
     await query.edit_message_text(msg, reply_markup=keyboard)
 
+async def process_update(json_data):
+    if not TOKEN:
+        return
+    
+    app = ApplicationBuilder().token(TOKEN).build()
+    
+    # Re-register all handlers
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("leaderboard", leaderboard))
+    app.add_handler(CommandHandler("shop", shop))
+    app.add_handler(CommandHandler("xo", xo))
+    app.add_handler(CallbackQueryHandler(handle_xo_move))
+
+    # Process the update
+    update = Update.de_json(json_data, app.bot)
+    
+    # Use the app's internal processing logic (requires async context)
+    async with app:
+        await app.process_update(update)
+
 if __name__ == '__main__':
     if not TOKEN:
         print("Error: TELEGRAM_BOT_TOKEN environment variable not set.")

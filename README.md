@@ -38,3 +38,28 @@ pip install -r requirements.txt
 
 ### Note on Database Persistence
 This project uses **SQLite**. On Vercel (serverless), the database file (`db.sqlite`) will be **reset** periodically. For long-term data persistence, it is recommended to use a remote database like MongoDB or PostgreSQL.
+
+Final Steps to fix the bot:
+
+   1. Redeploy to Vercel: Run the vercel command or push your changes to
+      Vercel.
+   2. Get your Vercel URL: It will look like
+      https://project-name.vercel.app.
+   3. Set the Webhook: Run this command in your terminal (replace YOUR_TOKEN
+      and YOUR_VERCEL_URL):
+
+   ###5
+   ```bash
+     "https://api.telegram.org/botYOUR_TOKEN/setWebhook?url=https://YOUR_VER
+     CEL_URL/webhook" ```
+
+  Once you do this, Telegram will send every message directly to your Vercel
+  app, and the bot will respond instantly!
+
+  Summary of fixes:
+   - Added a /webhook route in web/app.py.
+   - Added a process_update function in bot.py to handle serverless
+     requests.
+   - Updated utils.py to use /tmp/ for the database on Vercel.
+
+  Your bot should now work perfectly on Vercel!
