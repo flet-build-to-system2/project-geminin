@@ -1,0 +1,5 @@
+db.sqlite
+.gemini/
+venv/
+__pycache__/
+*.pyc
