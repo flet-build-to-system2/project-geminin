@@ -50,8 +50,12 @@ Final Steps to fix the bot:
 
    ###5
    ```bash
-     "https://api.telegram.org/botYOUR_TOKEN/setWebhook?url=https://YOUR_VER
-     CEL_URL/webhook" ```
+"https://api.telegram.org/botYOUR_TOKEN/setWebhook?url=https://YOUR_VER
+     CEL_URL/webhook"
+```
+```bash
+https://api.telegram.org/bot8206647669:AAHUiqdvpWLfwwrIzLw9jExZ6roN6oHqGSQ/setWebhook?url=https://project-geminin.vercel.app//webhook
+```
 
   Once you do this, Telegram will send every message directly to your Vercel
   app, and the bot will respond instantly!
