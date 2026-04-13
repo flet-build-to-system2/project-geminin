@@ -1,8 +1,9 @@
 import logging
 import os
+import random
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
-from utils import init_db, update_user_points, get_leaderboard, get_shop_items, check_winner
+from utils import init_db, update_user_points, get_leaderboard, get_shop_items, check_winner, save_game_state, get_game_state, clear_game_state
 
 # Bot Token (from environment variable)
 TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
@@ -30,9 +31,9 @@ async def shop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(text)
 
 async def xo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Initialize an empty XO board
+    user_id = update.effective_user.id
     board = ['' for _ in range(9)]
-    context.user_data['board'] = board
+    save_game_state(user_id, board)
     keyboard = build_keyboard(board)
     await update.message.reply_text("Let's play XO! Your turn (X).", reply_markup=keyboard)
 
@@ -51,7 +52,8 @@ async def handle_xo_move(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     
     index = int(query.data)
-    board = context.user_data.get('board')
+    user_id = query.from_user.id
+    board = get_game_state(user_id)
     
     if not board or board[index] != '':
         return
@@ -60,24 +62,25 @@ async def handle_xo_move(update: Update, context: ContextTypes.DEFAULT_TYPE):
     board[index] = 'X'
     winner = check_winner(board)
     if winner:
-        await finish_game(query, board, winner)
+        await finish_game(query, board, winner, user_id)
         return
 
-    # Bot move (O) - simple random move
-    import random
+    # Bot move (O)
     empty_indices = [i for i, x in enumerate(board) if x == '']
     if empty_indices:
         bot_move = random.choice(empty_indices)
         board[bot_move] = 'O'
         winner = check_winner(board)
         if winner:
-            await finish_game(query, board, winner)
+            await finish_game(query, board, winner, user_id)
             return
 
+    save_game_state(user_id, board)
     keyboard = build_keyboard(board)
     await query.edit_message_text("Your turn (X).", reply_markup=keyboard)
 
-async def finish_game(query, board, winner):
+async def finish_game(query, board, winner, user_id):
+    clear_game_state(user_id)
     keyboard = build_keyboard(board)
     msg = f"Game over! Winner: {winner}"
     if winner == 'X':
@@ -91,17 +94,14 @@ async def process_update(json_data):
     
     app = ApplicationBuilder().token(TOKEN).build()
     
-    # Re-register all handlers
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("leaderboard", leaderboard))
     app.add_handler(CommandHandler("shop", shop))
     app.add_handler(CommandHandler("xo", xo))
     app.add_handler(CallbackQueryHandler(handle_xo_move))
 
-    # Process the update
     update = Update.de_json(json_data, app.bot)
     
-    # Use the app's internal processing logic (requires async context)
     async with app:
         await app.process_update(update)
 
