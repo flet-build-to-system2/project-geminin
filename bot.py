@@ -89,19 +89,26 @@ async def finish_game(query, board, winner, user_id):
     await query.edit_message_text(msg, reply_markup=keyboard)
 
 async def process_update(json_data):
+    """Process a webhook update. Creates a fresh bot instance for each call (webhook mode)."""
     if not TOKEN:
+        logging.error("TELEGRAM_BOT_TOKEN not set")
         return
-    
+
+    # Build a new application for this update (webhook模式)
     app = ApplicationBuilder().token(TOKEN).build()
-    
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("leaderboard", leaderboard))
     app.add_handler(CommandHandler("shop", shop))
     app.add_handler(CommandHandler("xo", xo))
     app.add_handler(CallbackQueryHandler(handle_xo_move))
 
+    # Deserialize the update
     update = Update.de_json(json_data, app.bot)
-    
+    if not update:
+        logging.warning("Failed to deserialize update")
+        return
+
+    # Process the update within the application context
     async with app:
         await app.process_update(update)
 
